@@ -1,52 +1,58 @@
-import { GetStaticProps, GetStaticPaths } from 'next'
-import fs from 'fs'
-import path from 'path'
-import Image from 'next/image'
+import { GetStaticPaths, GetStaticProps } from 'next';
+import Image from 'next/image';
+import { useRouter } from 'next/router';
 
-type Product = {
-  title: string
-  description: string
-  price: string
-  slug: string
-  image?: string
-}
+const productData: Record<string, { title: string; description: string; image: string }> = {
+  'neural-impact': {
+    title: 'Neural Impact',
+    description: 'Unlock the full potential of your neural pathways.',
+    image: '/images/neural-impact.png',
+  },
+  'mind-mastery': {
+    title: 'Mind Mastery',
+    description: 'Gain elite control over thought, emotion, and manifestation.',
+    image: '/images/mind-mastery.png',
+  },
+  'soul-surge': {
+    title: 'Soul Surge',
+    description: 'Ignite the divine surge within you for clarity and power.',
+    image: '/images/soul-surge.png',
+  },
+};
 
-export default function ProductPage({ product }: { product: Product }) {
+export default function ProductPage({ title, description, image }: any) {
+  const router = useRouter();
+
+  if (router.isFallback) {
+    return <p>Loading...</p>;
+  }
+
   return (
-    <div style={{ padding: 20 }}>
-      <h1>{product.title}</h1>
-      <Image
-        src={product.image || '/images/default.jpg'}
-        alt={product.title}
-        width={600}
-        height={400}
-      />
-      <p>{product.description}</p>
-      <strong>{product.price}</strong>
+    <div style={{ padding: '2rem' }}>
+      <h1>{title}</h1>
+      <p>{description}</p>
+      <Image src={image} alt={title} width={600} height={400} />
     </div>
-  )
+  );
 }
 
 export const getStaticPaths: GetStaticPaths = async () => {
-  const filePath = path.join(process.cwd(), 'data/products.json')
-  const data = fs.readFileSync(filePath, 'utf8')
-  const products: Product[] = JSON.parse(data)
-
-  const paths = products.map(product => ({
-    params: { slug: product.slug }
-  }))
-
-  return { paths, fallback: 'blocking' }
-}
+  return {
+    paths: Object.keys(productData).map(slug => ({ params: { slug } })),
+    fallback: 'blocking',
+  };
+};
 
 export const getStaticProps: GetStaticProps = async ({ params }) => {
-  const slug = params?.slug as string
-  const filePath = path.join(process.cwd(), 'data/products.json')
-  const data = fs.readFileSync(filePath, 'utf8')
-  const products: Product[] = JSON.parse(data)
-  const product = products.find(p => p.slug === slug)
+  const slug = params?.slug as string;
+  const data = productData[slug];
 
-  if (!product) return { notFound: true }
+  if (!data) {
+    return { notFound: true };
+  }
 
-  return { props: { product }, revalidate: 60 }
-}
+  return {
+    props: data,
+    revalidate: 60,
+  };
+};
