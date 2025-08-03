@@ -1,4 +1,6 @@
-export default async function handler(req, res) {
+import type { NextApiRequest, NextApiResponse } from "next";
+
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
@@ -12,22 +14,25 @@ export default async function handler(req, res) {
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
       headers: {
-        "Authorization": "Bearer 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",
         "Content-Type": "application/json",
-        "HTTP-Referer": "https://jdc-lam.vercel.app",
-        "X-Title": "JDC Mixtral"
+        "Authorization": "Token r8_NHHY0KcQcP3w6A2VK4UgnLI0crvZ2hFgBPxHBgJ"
       },
       body: JSON.stringify({
-        model: "mistral/mixtral-8x7b",
+        model: "mistralai/mixtral-8x7b-instruct",
         messages,
         temperature: 0.7
       }),
     });
 
     const data = await response.json();
-    const reply = data?.choices?.[0]?.message?.content || "Mixtral gave no reply.";
-    res.status(200).json({ reply });
-  } catch (err) {
-    res.status(500).json({ error: "AI error", details: err.message });
+
+    if (data.choices && data.choices.length > 0) {
+      res.status(200).json({ reply: data.choices[0].message.content });
+    } else {
+      res.status(500).json({ error: "No response from Mixtral" });
+    }
+  } catch (error) {
+    console.error("Mixtral API error:", error);
+    res.status(500).json({ error: "Error reaching Mixtral" });
   }
 }
