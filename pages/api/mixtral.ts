@@ -18,21 +18,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         "Authorization": "Token r8_NHHY0KcQcP3w6A2VK4UgnLI0crvZ2hFgBPxHBgJ"
       },
       body: JSON.stringify({
-        model: "openrouter/mixtral-8x7b",
+        model: "mistralai/mixtral-8x7b-instruct",
         messages,
-        temperature: 0.7,
-        max_tokens: 1024,
-        stream: false
-      })
+        temperature: 0.7
+      }),
     });
 
     const data = await response.json();
-    if (data?.choices?.[0]?.message?.content) {
+
+    if (data?.choices?.length > 0 && data.choices[0].message?.content) {
       res.status(200).json({ reply: data.choices[0].message.content });
     } else {
-      console.error("Invalid response from Mixtral:", data);
-      res.status(500).json({ error: "No valid reply from Mixtral" });
+      res.status(200).json({ reply: "⚠️ Mixtral didn’t respond with content. Try again or check system load." });
     }
+
   } catch (error) {
     console.error("Mixtral API error:", error);
     res.status(500).json({ error: "Error reaching Mixtral" });
