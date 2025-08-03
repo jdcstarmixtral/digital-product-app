@@ -2,22 +2,8 @@
   {
     "slug": "quantum-booster",
     "title": "Quantum Booster",
-    "description": "Unlock latent energy and manifest higher awareness.",
+    "description": "Unlock the hidden reserves of energy within.",
     "image": "quantum-booster.jpg",
-    "price": 33.00
-  },
-  {
-    "slug": "neural-impact",
-    "title": "Neural Impact",
-    "description": "Rewire your subconscious with frequency precision.",
-    "image": "neural-impact.jpg",
-    "price": 77.00
-  },
-  {
-    "slug": "ascension-kit",
-    "title": "Ascension Kit",
-    "description": "C-STAR-curated tools for lightbody activation.",
-    "image": "ascension-kit.jpg",
-    "price": 144.00
+    "price": 2.99
   }
 ]
