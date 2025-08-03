@@ -1,9 +1,9 @@
+import { GetStaticPaths, GetStaticProps } from 'next'
+import Image from 'next/image'
 import fs from 'fs'
 import path from 'path'
-import { GetStaticPaths, GetStaticProps } from 'next'
-import Head from 'next/head'
 
-interface Product {
+type Product = {
   slug: string
   title: string
   description: string
@@ -11,20 +11,22 @@ interface Product {
   price: number
 }
 
-export default function ProductPage({ product }: { product: Product }) {
-  if (!product) return <div>Product not found.</div>
+type Props = {
+  product: Product
+}
 
+export default function ProductPage({ product }: Props) {
   return (
-    <div>
-      <Head>
-        <title>{product.title}</title>
-      </Head>
-      <main className="p-4">
-        <h1 className="text-3xl font-bold">{product.title}</h1>
-        <img src={`/images/${product.image}`} alt={product.title} className="my-4 w-full max-w-md" />
-        <p className="mb-4">{product.description}</p>
-        <button className="bg-black text-white px-4 py-2 rounded">Buy for ${product.price}</button>
-      </main>
+    <div style={{ padding: '2rem', maxWidth: '800px', margin: '0 auto' }}>
+      <h1>{product.title}</h1>
+      <Image
+        src={`/images/${product.image}`}
+        alt={product.title}
+        width={600}
+        height={400}
+      />
+      <p>{product.description}</p>
+      <p style={{ fontWeight: 'bold' }}>${product.price.toFixed(2)}</p>
     </div>
   )
 }
@@ -34,7 +36,7 @@ export const getStaticPaths: GetStaticPaths = async () => {
   const data = fs.readFileSync(filePath, 'utf8')
   const products: Product[] = JSON.parse(data)
 
-  const paths = products.map(product => ({
+  const paths = products.map((product) => ({
     params: { slug: product.slug }
   }))
 
