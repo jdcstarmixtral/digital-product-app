@@ -44,7 +44,9 @@ export default function MixtralAIChat() {
         <div className="space-y-4 mb-6">
           {messages.map((msg, i) => (
             <div key={i} className={msg.role === "user" ? "text-right" : "text-left"}>
-              <div className={}>
+              <div className={`inline-block px-4 py-2 rounded-xl ${
+                msg.role === "user" ? "bg-blue-100" : "bg-gray-200"
+              }`}>
                 <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
               </div>
             </div>
