@@ -30,8 +30,8 @@ export const getStaticPaths: GetStaticPaths = async () => {
   const slugs = [
     'neural-impact',
     'mind-mastery',
-    'soul-surge'
-    // Add new slugs dynamically later
+    'soul-surge',
+    'neural-impact' // This duplicate line is the problem
   ];
 
   const uniqueSlugs = Array.from(new Set(slugs));
@@ -49,7 +49,6 @@ export const getStaticPaths: GetStaticPaths = async () => {
 export const getStaticProps: GetStaticProps = async ({ params }) => {
   const slug = params?.slug as string;
 
-  // Basic fallback content logic (to be replaced by dynamic source)
   const productMap: Record<string, ProductProps> = {
     'neural-impact': {
       title: 'Neural Impact',
