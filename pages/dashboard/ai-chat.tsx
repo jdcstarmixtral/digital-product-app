@@ -1,22 +1,14 @@
-import { useState, KeyboardEvent } from "react";
+import { useState } from "react";
 import Head from "next/head";
 
-type Message = {
-  role: "user" | "assistant" | "system";
-  content: string;
-};
-
 export default function MixtralAIChat() {
-  const [messages, setMessages] = useState<Message[]>([
-    { role: "system", content: "You're now chatting with J-Star Mixtral AI. Ask me anything." }
-  ]);
+  const [messages, setMessages] = useState([{ role: "system", content: "You're now chatting with J-Star Mixtral AI. Ask me anything." }]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
 
   async function sendMessage() {
     if (!input.trim()) return;
-
-    const userMessage: Message = { role: "user", content: input };
+    const userMessage = { role: "user", content: input };
     const updatedMessages = [...messages, userMessage];
     setMessages(updatedMessages);
     setInput("");
@@ -30,22 +22,16 @@ export default function MixtralAIChat() {
       });
 
       const data = await res.json();
-      setMessages([
-        ...updatedMessages,
-        { role: "assistant", content: data?.reply || "No response from Mixtral." }
-      ]);
+      if (data?.reply) {
+        setMessages([...updatedMessages, { role: "assistant", content: data.reply }]);
+      } else {
+        setMessages([...updatedMessages, { role: "assistant", content: "No response from Mixtral." }]);
+      }
     } catch (err) {
-      setMessages([
-        ...updatedMessages,
-        { role: "assistant", content: "Error reaching Mixtral AI." }
-      ]);
+      setMessages([...updatedMessages, { role: "assistant", content: "Error reaching AI." }]);
     } finally {
       setLoading(false);
     }
-  }
-
-  function handleKey(e: KeyboardEvent<HTMLInputElement>) {
-    if (e.key === "Enter") sendMessage();
   }
 
   return (
@@ -67,14 +53,10 @@ export default function MixtralAIChat() {
             className="flex-1 p-2 border rounded-lg"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleKey}
+            onKeyDown={(e) => e.key === "Enter" && sendMessage()}
             placeholder="Ask anything..."
           />
-          <button
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg"
-            onClick={sendMessage}
-            disabled={loading}
-          >
+          <button className="bg-blue-600 text-white px-4 py-2 rounded-lg" onClick={sendMessage} disabled={loading}>
             {loading ? "..." : "Send"}
           </button>
         </div>
