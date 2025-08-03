@@ -1,58 +1,84 @@
 import { GetStaticPaths, GetStaticProps } from 'next';
 import Image from 'next/image';
+import path from 'path';
+import fs from 'fs';
 import { useRouter } from 'next/router';
 
-const productData: Record<string, { title: string; description: string; image: string }> = {
-  'neural-impact': {
-    title: 'Neural Impact',
-    description: 'Unlock the full potential of your neural pathways.',
-    image: '/images/neural-impact.png',
-  },
-  'mind-mastery': {
-    title: 'Mind Mastery',
-    description: 'Gain elite control over thought, emotion, and manifestation.',
-    image: '/images/mind-mastery.png',
-  },
-  'soul-surge': {
-    title: 'Soul Surge',
-    description: 'Ignite the divine surge within you for clarity and power.',
-    image: '/images/soul-surge.png',
-  },
-};
+interface ProductProps {
+  title: string;
+  description: string;
+  price: string;
+  image: string;
+}
 
-export default function ProductPage({ title, description, image }: any) {
+export default function ProductPage({ title, description, price, image }: ProductProps) {
   const router = useRouter();
-
-  if (router.isFallback) {
-    return <p>Loading...</p>;
-  }
+  if (router.isFallback) return <div>Loading...</div>;
 
   return (
-    <div style={{ padding: '2rem' }}>
-      <h1>{title}</h1>
-      <p>{description}</p>
-      <Image src={image} alt={title} width={600} height={400} />
+    <div className="p-8 text-center">
+      <h1 className="text-4xl font-bold mb-4">{title}</h1>
+      <Image src={`/images/${image}`} alt={title} width={600} height={400} className="mx-auto mb-4" />
+      <p className="mb-2">{description}</p>
+      <p className="text-xl font-semibold mb-4">{price}</p>
+      <button className="bg-black text-white px-6 py-2 rounded-lg">Buy Now</button>
     </div>
   );
 }
 
 export const getStaticPaths: GetStaticPaths = async () => {
+  const slugs = [
+    'neural-impact',
+    'mind-mastery',
+    'soul-surge'
+    // Add new slugs dynamically later
+  ];
+
+  const uniqueSlugs = Array.from(new Set(slugs));
+
+  const paths = uniqueSlugs.map(slug => ({
+    params: { slug }
+  }));
+
   return {
-    paths: Object.keys(productData).map(slug => ({ params: { slug } })),
-    fallback: 'blocking',
+    paths,
+    fallback: 'blocking'
   };
 };
 
 export const getStaticProps: GetStaticProps = async ({ params }) => {
   const slug = params?.slug as string;
-  const data = productData[slug];
 
-  if (!data) {
+  // Basic fallback content logic (to be replaced by dynamic source)
+  const productMap: Record<string, ProductProps> = {
+    'neural-impact': {
+      title: 'Neural Impact',
+      description: 'Unlock your mind\'s full potential.',
+      price: '$4.99',
+      image: 'neural-impact.jpg'
+    },
+    'mind-mastery': {
+      title: 'Mind Mastery',
+      description: 'Take control of your inner world.',
+      price: '$7.99',
+      image: 'mind-mastery.jpg'
+    },
+    'soul-surge': {
+      title: 'Soul Surge',
+      description: 'Amplify your energy and purpose.',
+      price: '$9.99',
+      image: 'soul-surge.jpg'
+    }
+  };
+
+  const product = productMap[slug];
+
+  if (!product) {
     return { notFound: true };
   }
 
   return {
-    props: data,
-    revalidate: 60,
+    props: product,
+    revalidate: 60
   };
 };
