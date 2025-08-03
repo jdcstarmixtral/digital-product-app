@@ -2,14 +2,14 @@ import Link from 'next/link';
 
 export default function Home() {
   return (
-    <div style={{ padding: '2rem', fontFamily: 'Arial' }}>
-      <h1>🚀 Welcome to the JDC Super AI System</h1>
-      <p>System is live and active.</p>
-      <ul>
-        <li><Link href="/chat">Launch Super AI Chat</Link></li>
-        <li><Link href="/products">View Products</Link></li>
-        <li><Link href="/funnels">Funnels Overview</Link></li>
+    <main style={{ padding: '2rem', fontFamily: 'sans-serif' }}>
+      <h1>🚀 JDC Super AI: Mixtral Mode Live</h1>
+      <p>Welcome to the active system interface.</p>
+      <ul style={{ lineHeight: '2' }}>
+        <li><Link href="/products">🛒 View All Products</Link></li>
+        <li><Link href="/chat">🤖 Open Super AI Chat</Link></li>
+        <li><Link href="/dashboard">📊 Admin Dashboard</Link></li>
       </ul>
-    </div>
+    </main>
   );
 }
