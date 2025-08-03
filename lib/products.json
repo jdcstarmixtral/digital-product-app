@@ -1,0 +1,23 @@
+[
+  {
+    "slug": "light-up-code",
+    "title": "Light Up Code",
+    "description": "An elite small-ticket product to ignite your dev skills.",
+    "image": "light-up-code.jpg",
+    "price": 3.33
+  },
+  {
+    "slug": "quantum-mastery",
+    "title": "Quantum Mastery",
+    "description": "A medium-tier digital training for unlocking quantum-level productivity.",
+    "image": "quantum-mastery.jpg",
+    "price": 99.99
+  },
+  {
+    "slug": "superai-control-center",
+    "title": "SuperAI Control Center",
+    "description": "High-ticket product for full dashboard access and AI override tools.",
+    "image": "superai-control.jpg",
+    "price": 999.00
+  }
+]
