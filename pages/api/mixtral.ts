@@ -14,20 +14,20 @@ export default async function handler(req, res) {
       headers: {
         "Authorization": "Bearer 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",
         "Content-Type": "application/json",
-        "HTTP-Referer": "https://jdc-24zqjo6m3-jesscosales-projects.vercel.app",
+        "HTTP-Referer": "https://jdc-lam.vercel.app",
         "X-Title": "JDC Mixtral"
       },
       body: JSON.stringify({
         model: "mistral/mixtral-8x7b",
         messages,
         temperature: 0.7
-      })
+      }),
     });
 
-    const json = await response.json();
-    const reply = json.choices?.[0]?.message?.content;
-    res.status(200).json({ reply: reply || "No reply from Mixtral." });
+    const data = await response.json();
+    const reply = data?.choices?.[0]?.message?.content || "Mixtral gave no reply.";
+    res.status(200).json({ reply });
   } catch (err) {
-    res.status(500).json({ error: "Failed to fetch from OpenRouter", details: err.message });
+    res.status(500).json({ error: "AI error", details: err.message });
   }
 }
