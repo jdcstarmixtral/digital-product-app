@@ -1,4 +1,3 @@
-// ✅ Auto-AI Image Generator for Product Pages — LIVE BUILD
 import fs from 'fs';
 import path from 'path';
 import fetch from 'node-fetch';
@@ -6,44 +5,47 @@ import fetch from 'node-fetch';
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || '';
 const IMAGE_OUTPUT_PATH = path.join(process.cwd(), 'public', 'images');
 
-/**
- * 1. Generate a product image using AI based on product title
- */
-export async function generateProductImage(title: string, slug: string) {
-  const prompt = `Create a high-quality e-commerce product cover for: "${title}" — white background, elite design, product-centric focus`;
+interface ImageAPIResponse {
+  data: {
+    url: string;
+  }[];
+}
 
-  const res = await fetch("https://openrouter.ai/api/v1/images/generate", {
-    method: "POST",
+async function generateProductImage(productTitle: string, fileName: string) {
+  const prompt = `Hyper-realistic digital product cover for "${productTitle}". White background, centered, elite quality.`;
+
+  const response = await fetch('https://api.openrouter.ai/v1/images/generations', {
+    method: 'POST',
     headers: {
-      "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
-      "Content-Type": "application/json"
+      'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+      'Content-Type': 'application/json',
     },
     body: JSON.stringify({
+      model: 'claude-3-haiku-20240307',
       prompt,
-      model: "midjourney", // or "dalle-3" or "stability-ai" based on your OpenRouter plan
-      size: "512x512",
-      n: 1
-    })
+      size: '512x512',
+    }),
   });
 
-  const data = await res.json();
+  const data = await response.json() as ImageAPIResponse;
+
   if (!data?.data?.[0]?.url) {
-    throw new Error("Image generation failed");
+    throw new Error('Image generation failed. No image URL returned.');
   }
 
-  // Download image and save
   const imageUrl = data.data[0].url;
-  const imageBuffer = await fetch(imageUrl).then(r => r.buffer());
-  const imagePath = path.join(IMAGE_OUTPUT_PATH, `${slug}.jpg`);
+  const imageRes = await fetch(imageUrl);
+  const buffer = await imageRes.buffer();
 
-  fs.mkdirSync(IMAGE_OUTPUT_PATH, { recursive: true });
-  fs.writeFileSync(imagePath, imageBuffer);
-  return `/images/${slug}.jpg`;
+  if (!fs.existsSync(IMAGE_OUTPUT_PATH)) {
+    fs.mkdirSync(IMAGE_OUTPUT_PATH, { recursive: true });
+  }
+
+  fs.writeFileSync(path.join(IMAGE_OUTPUT_PATH, fileName), buffer);
+  console.log(`✅ Saved: ${fileName}`);
 }
 
-/**
- * 2. Retrieve image URL from slug (safe for frontend)
- */
-export function getImageUrlForSlug(slug: string): string {
-  return `/images/${slug}.jpg`;
-}
+// Example usage
+generateProductImage('Quantum Booster', 'quantum-booster.png')
+  .then(() => console.log('✅ Done.'))
+  .catch(err => console.error('❌ Error:', err));
