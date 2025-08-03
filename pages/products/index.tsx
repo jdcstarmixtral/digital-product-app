@@ -1,54 +1,49 @@
-import Link from 'next/link'
-import Image from 'next/image'
-import fs from 'fs'
-import path from 'path'
+import Head from "next/head";
+import Image from "next/image";
+import Link from "next/link";
 
-type Product = {
-  slug: string
-  title: string
-  description: string
-  image: string
-  price: number
-}
+const products = [
+  {
+    id: "neural-impact",
+    title: "Neural Impact",
+    image: "/images/neural-impact.jpg",
+    price: ".99",
+    tier: "Low"
+  },
+  {
+    id: "soul-mastery",
+    title: "Soul Mastery",
+    image: "/images/soul-mastery.jpg",
+    price: "9",
+    tier: "Medium"
+  },
+  {
+    id: "infinite-ascension",
+    title: "Infinite Ascension",
+    image: "/images/infinite-ascension.jpg",
+    price: "33",
+    tier: "High"
+  }
+];
 
-export async function getStaticProps() {
-  const filePath = path.join(process.cwd(), 'lib', 'products.json')
-  const data = fs.readFileSync(filePath, 'utf8')
-  const products: Product[] = JSON.parse(data)
-
-  return { props: { products }, revalidate: 60 }
-}
-
-export default function ProductList({ products }: { products: Product[] }) {
+export default function ProductIndex() {
   return (
-    <div style={{ padding: '2rem' }}>
-      <h1>All Products</h1>
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-        gap: '1.5rem'
-      }}>
-        {products.map(product => (
-          <div key={product.slug} style={{
-            border: '1px solid #ccc',
-            padding: '1rem',
-            borderRadius: '0.5rem'
-          }}>
-            <Link href={`/products/${product.slug}`}>
-              <a>
-                <Image
-                  src={`/images/${product.image}`}
-                  alt={product.title}
-                  width={300}
-                  height={200}
-                />
-                <h2>{product.title}</h2>
-                <p>${product.price.toFixed(2)}</p>
-              </a>
+    <>
+      <Head><title>All Products</title></Head>
+      <div className="p-8 max-w-6xl mx-auto">
+        <h1 className="text-4xl font-bold mb-6">🛒 Elite Digital Products</h1>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {products.map((product) => (
+            <Link key={product.id} href={`/products/${product.id}`}>
+              <div className="border rounded-xl p-4 hover:shadow-lg bg-white">
+                <Image src={product.image} alt={product.title} width={400} height={300} className="rounded" />
+                <h2 className="text-xl font-semibold mt-2">{product.title}</h2>
+                <p className="text-sm text-gray-600">{product.tier} Tier • {product.price}</p>
+              </div>
             </Link>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
-    </div>
-  )
+    </>
+  );
 }

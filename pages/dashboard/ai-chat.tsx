@@ -3,7 +3,7 @@ import Head from "next/head";
 
 export default function MixtralAIChat() {
   const [messages, setMessages] = useState([
-    { role: "system", content: "You're now chatting with J-Star Mixtral AI. Ask me anything." },
+    { role: "system", content: "You're now chatting with J-Star Mixtral AI. Ask me anything." }
   ]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -22,15 +22,17 @@ export default function MixtralAIChat() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ messages: updatedMessages }),
       });
-
       const data = await res.json();
       if (data?.reply) {
         setMessages([...updatedMessages, { role: "assistant", content: data.reply }]);
       } else {
-        setMessages([...updatedMessages, { role: "assistant", content: "No response from Mixtral." }]);
+        throw new Error("No reply from Mixtral");
       }
-    } catch (err) {
-      setMessages([...updatedMessages, { role: "assistant", content: "Error reaching AI." }]);
+    } catch {
+      setMessages([...updatedMessages, {
+        role: "assistant",
+        content: "⚠️ Mixtral didn’t respond with content. Try again or check system load."
+      }]);
     } finally {
       setLoading(false);
     }
@@ -44,9 +46,7 @@ export default function MixtralAIChat() {
         <div className="space-y-4 mb-6">
           {messages.map((msg, i) => (
             <div key={i} className={msg.role === "user" ? "text-right" : "text-left"}>
-              <div className={`inline-block px-4 py-2 rounded-xl ${
-                msg.role === "user" ? "bg-blue-100" : "bg-gray-200"
-              }`}>
+              <div className={`inline-block px-4 py-2 rounded-xl ${msg.role === "user" ? "bg-blue-100" : "bg-gray-200"}`}>
                 <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
               </div>
             </div>
