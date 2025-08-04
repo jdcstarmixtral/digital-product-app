@@ -5,33 +5,35 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { messages } = req.body;
+  const { prompt } = req.body;
 
-  if (!messages || !Array.isArray(messages)) {
-    return res.status(400).json({ error: 'Missing or invalid messages' });
+  if (!prompt) {
+    return res.status(400).json({ error: 'Missing prompt' });
   }
 
+  const apiKey = process.env.HUGGINGFACE_API_KEY;
+  const model = 'mistralai/Mixtral-8x7B-Instruct-v0.1'; // <- Change if using a different one
+
   try {
-    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+    const response = await fetch(`https://api-inference.huggingface.co/models/${model}`, {
       method: 'POST',
       headers: {
-        'Authorization': 'Bearer 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',
+        Authorization: `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
-        'HTTP-Referer': 'https://jdcai.vercel.app',
-        'X-Title': 'JDC Super AI'
       },
-      body: JSON.stringify({
-        model: 'mistralai/mixtral-8x7b',
-        messages,
-        temperature: 0.8
-      }),
+      body: JSON.stringify({ inputs: prompt }),
     });
 
+    if (!response.ok) {
+      const error = await response.json();
+      return res.status(response.status).json({ error: error.error || 'AI response error' });
+    }
+
     const data = await response.json();
-    const message = data.choices?.[0]?.message?.content || '⚠️ No response from Mixtral.';
-    res.status(200).json({ message });
-  } catch (error) {
-    console.error('[Mixtral Error]', error);
-    res.status(500).json({ error: 'Failed to reach Mixtral API' });
+    const result = Array.isArray(data) ? data[0]?.generated_text : data?.generated_text;
+
+    return res.status(200).json({ result: result || 'No response generated.' });
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message || 'Server error' });
   }
 }
