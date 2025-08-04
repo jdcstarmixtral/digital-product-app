@@ -21,17 +21,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
 
     const data = await hfResponse.json();
-    
-    if (hfResponse.ok) {
-      const text = Array.isArray(data) && data[0]?.generated_text
-        ? data[0].generated_text
-        : data.generated_text || JSON.stringify(data);
 
-      return res.status(200).json({ response: text });
-    } else {
-      console.error('HF Error:', data);
-      return res.status(500).json({ error: 'HuggingFace failed', details: data });
-    }
+    const text = Array.isArray(data) && data[0]?.generated_text
+      ? data[0].generated_text
+      : data.generated_text || JSON.stringify(data);
+
+    return res.status(200).json({ response: text });
+
   } catch (err: any) {
     console.error('Internal error:', err);
     return res.status(500).json({ error: 'Internal server error', details: err.message });
