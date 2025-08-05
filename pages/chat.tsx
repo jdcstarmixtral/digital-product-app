@@ -13,7 +13,6 @@ export default function Chat() {
 
   const sendMessage = async () => {
     if (!input.trim()) return;
-
     const updatedMessages = [...messages, { role: "user", content: input }];
     setMessages(updatedMessages);
     setInput("");
@@ -52,11 +51,12 @@ export default function Chat() {
         <title>MIXTRAL AI CHAT</title>
         <meta name="description" content="Mixtral – The elite, self-healing AI chat interface." />
       </Head>
+
       <h1 className="text-3xl font-bold mb-4">MIXTRAL AI CHAT</h1>
 
       <div className="space-y-4 mb-4">
         {messages.map((msg, index) => (
-          <div key={index} className={\`p-2 rounded \${msg.role === "user" ? "bg-blue-100" : "bg-gray-200"}\`}>
+          <div key={index} className={`p-2 rounded ${msg.role === "user" ? "bg-blue-100" : "bg-gray-200"}`}>
             <strong>{msg.role}:</strong> {msg.content}
           </div>
         ))}
