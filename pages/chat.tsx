@@ -1,37 +1,50 @@
-import Head from "next/head"
-import { useState } from "react"
+import Head from "next/head";
+import { useState } from "react";
 
 export default function Chat() {
+  const [input, setInput] = useState("");
   const [messages, setMessages] = useState([
     {
       role: "system",
-      content: "You are Mixtral, the elite AI chat system. You are self-healing, responsive, and built for live production performance. Always respond intelligently and helpfully."
+      content:
+        "You are Mixtral, the elite AI chat system. You are self-healing, responsive, and built for live production performance. Always respond intelligently and helpfully."
     }
-  ])
-  const [input, setInput] = useState("")
-  const [loading, setLoading] = useState(false)
+  ]);
 
   const sendMessage = async () => {
-    if (!input.trim()) return
-    const newMessages = [...messages, { role: "user", content: input }]
-    setMessages(newMessages)
-    setLoading(true)
+    if (!input.trim()) return;
 
-    const res = await fetch("/api/mixtral", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        memoryId: "chat-global", // static memory bucket, can be customized per user later
-        input
-      })
-    })
+    const updatedMessages = [...messages, { role: "user", content: input }];
+    setMessages(updatedMessages);
+    setInput("");
 
-    const data = await res.json()
-    const reply = data.output || "⚠️ No response"
-    setMessages([...newMessages, { role: "assistant", content: reply }])
-    setInput("")
-    setLoading(false)
-  }
+    try {
+      const res = await fetch("/api/mixtral", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ messages: updatedMessages })
+      });
+
+      const data = await res.json();
+
+      if (data.choices && data.choices[0]?.message) {
+        setMessages([...updatedMessages, data.choices[0].message]);
+      } else {
+        setMessages([
+          ...updatedMessages,
+          { role: "assistant", content: "Error: Invalid AI response." }
+        ]);
+      }
+    } catch (error) {
+      console.error("Error calling Mixtral API:", error);
+      setMessages([
+        ...updatedMessages,
+        { role: "assistant", content: "Error communicating with Mixtral backend." }
+      ]);
+    }
+  };
 
   return (
     <div className="p-6 max-w-2xl mx-auto">
@@ -42,11 +55,8 @@ export default function Chat() {
       <h1 className="text-3xl font-bold mb-4">MIXTRAL AI CHAT</h1>
 
       <div className="space-y-4 mb-4">
-        {messages.map((msg, idx) => (
-          <div
-            key={idx}
-            className={`p-3 rounded-lg ${msg.role === "user" ? "bg-blue-100" : msg.role === "assistant" ? "bg-green-100" : "bg-gray-100"}`}
-          >
+        {messages.map((msg, index) => (
+          <div key={index} className={\`p-2 rounded \${msg.role === "user" ? "bg-blue-100" : "bg-gray-200"}\`}>
             <strong>{msg.role}:</strong> {msg.content}
           </div>
         ))}
@@ -55,19 +65,19 @@ export default function Chat() {
       <div className="flex gap-2">
         <input
           type="text"
+          className="border p-2 flex-grow rounded"
+          placeholder="Type your message..."
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="Ask Mixtral anything..."
-          className="flex-1 border p-2 rounded"
+          onKeyDown={(e) => e.key === "Enter" && sendMessage()}
         />
         <button
           onClick={sendMessage}
-          disabled={loading}
-          className="bg-black text-white px-4 py-2 rounded"
+          className="bg-blue-600 text-white px-4 py-2 rounded"
         >
-          {loading ? "..." : "Send"}
+          Send
         </button>
       </div>
     </div>
-  )
+  );
 }
