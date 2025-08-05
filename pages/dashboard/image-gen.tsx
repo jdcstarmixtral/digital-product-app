@@ -12,7 +12,6 @@ export default function ImageGen() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ prompt }),
       });
-
       const data = await res.json();
       if (data.imageUrl) setImageUrl(data.imageUrl);
     } catch (err) {
@@ -40,7 +39,6 @@ export default function ImageGen() {
       >
         Generate Image
       </button>
-
       {imageUrl && (
         <div className="mt-6">
           <img src={imageUrl} alt="Generated" className="rounded-lg shadow-lg" />
