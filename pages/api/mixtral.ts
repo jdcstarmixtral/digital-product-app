@@ -1,40 +1,36 @@
-import type { NextApiRequest, NextApiResponse } from 'next'
-import axios from 'axios'
+import type { NextApiRequest, NextApiResponse } from 'next';
+import axios from 'axios';
 
-const MIXTRAL_ENDPOINT = 'https://openrouter.ai/api/v1/chat/completions'
+const MIXTRAL_API_URL = 'https://openrouter.ai/api/v1/chat/completions';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' })
-  }
-
-  const { messages } = req.body
-
-  if (!messages || !Array.isArray(messages)) {
-    return res.status(400).json({ error: 'Missing or invalid messages' })
+    return res.status(405).json({ error: 'Method not allowed' });
   }
 
   try {
+    const { messages } = req.body;
+
     const response = await axios.post(
-      MIXTRAL_ENDPOINT,
+      MIXTRAL_API_URL,
       {
-        model: 'mistral/mixtral-8x7b',
-        messages,
+        model: 'mistralai/mixtral-8x7b-instruct',
+        messages: messages,
       },
       {
         headers: {
-          Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
+          'Authorization': \`Bearer \${process.env.OPENROUTER_API_KEY}\`,
+          'Content-Type': 'application/json',
           'HTTP-Referer': process.env.OPENROUTER_HTTP_REFERER || 'https://digital-product.vercel.app',
           'X-Title': process.env.OPENROUTER_X_TITLE || 'JDC LAM',
         },
       }
-    )
+    );
 
-    const reply = response.data.choices?.[0]?.message?.content || '⚠️ No reply from model'
-    res.status(200).json({ reply })
-
-  } catch (err: any) {
-    console.error('[Mixtral Error]', err.response?.data || err.message)
-    res.status(500).json({ error: 'Mixtral request failed' })
+    const reply = response.data.choices?.[0]?.message?.content || '⚠️ No response';
+    res.status(200).json({ reply });
+  } catch (error) {
+    console.error('Mixtral API error:', error);
+    res.status(500).json({ error: 'Error contacting Mixtral server' });
   }
 }
