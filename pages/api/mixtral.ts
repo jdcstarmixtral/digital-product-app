@@ -16,7 +16,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const response = await fetch(MIXTRAL_URL, {
       method: 'POST',
       headers: {
-        'Authorization': \`Bearer \${process.env.OPENROUTER_API_KEY}\`,
+        'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
         'Content-Type': 'application/json',
         'HTTP-Referer': process.env.OPENROUTER_HTTP_REFERER || '',
         'X-Title': process.env.OPENROUTER_X_TITLE || 'JDC-AI'
@@ -42,7 +42,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const product = JSON.parse(content);
     const slug = product.slug || product.title.toLowerCase().replace(/\s+/g, '-');
 
-    await writeMixtralProduct(slug, product); // ✅ CORRECT FIX: two arguments
+    await writeMixtralProduct(slug, product); // ✅ two arguments required
 
     return res.status(200).json({ success: true, slug, product });
 
