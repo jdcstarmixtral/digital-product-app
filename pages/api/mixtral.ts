@@ -39,7 +39,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const data = await response.json();
     return res.status(200).json({ response: data.choices?.[0]?.message?.content || '' });
   } catch (err) {
-    console.error('API error:', err);
+    console.error('Mixtral API error:', err);
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
