@@ -1,47 +1,73 @@
-import { useState } from 'react'
-import axios from 'axios'
+import Head from "next/head";
+import { useEffect, useState } from "react";
+import { runSelfHealingDiagnostics } from "../lib/selfheal";
 
 export default function Dashboard() {
-  const [input, setInput] = useState('')
-  const [output, setOutput] = useState('')
-  const [memoryId, setMemoryId] = useState('admin-core')
+  const [health, setHealth] = useState("Checking...");
+  const [laws, setLaws] = useState([]);
+  const [overrideVisible, setOverrideVisible] = useState(false);
 
-  const handleSubmit = async () => {
-    setOutput('Thinking...')
-    try {
-      const res = await axios.post('/api/mixtral-lam', {
-        input,
-        memoryId,
-        context: 'dashboard-command'
-      })
-      setOutput(res.data.output)
-    } catch (err) {
-      setOutput('Error: ' + err.message)
+  useEffect(() => {
+    async function check() {
+      const result = await runSelfHealingDiagnostics();
+      setHealth(result.healthy ? "✅ All Systems Go" : "⚠️ Issues Detected");
     }
-  }
+
+    async function fetchLaws() {
+      try {
+        const res = await fetch("/api/corelaws");
+        const data = await res.json();
+        setLaws(data || []);
+      } catch (err) {
+        setLaws([{ title: "Error", description: "Failed to load core laws." }]);
+      }
+    }
+
+    check();
+    fetchLaws();
+  }, []);
+
+  const triggerOverride = async () => {
+    await fetch("/api/override", { method: "POST" });
+    alert("🚨 Override triggered.");
+  };
 
   return (
-    <div className="min-h-screen p-6 bg-black text-white font-mono">
-      <h1 className="text-2xl mb-4">🧠 Mixtral LAM Dashboard</h1>
+    <div className="p-6 max-w-4xl mx-auto">
+      <Head>
+        <title>JDC LAM Dashboard</title>
+      </Head>
 
-      <input
-        className="w-full p-2 mb-3 bg-zinc-800 text-white rounded"
-        placeholder="Enter command to LAM"
-        value={input}
-        onChange={(e) => setInput(e.target.value)}
-      />
+      <h1 className="text-4xl font-bold mb-4">JDC LAM Control Panel</h1>
+      <p className="text-lg mb-2">System Status: <strong>{health}</strong></p>
 
       <button
-        onClick={handleSubmit}
-        className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded"
+        onClick={() => setOverrideVisible(!overrideVisible)}
+        className="bg-black text-white px-4 py-2 rounded mb-4"
       >
-        Execute
+        {overrideVisible ? "Hide Override" : "Show Manual Override"}
       </button>
 
-      <div className="mt-6 p-4 bg-zinc-900 rounded border border-zinc-700">
-        <strong>Response:</strong>
-        <pre className="whitespace-pre-wrap mt-2">{output}</pre>
-      </div>
+      {overrideVisible && (
+        <div className="bg-red-100 border border-red-400 p-4 mb-4 rounded">
+          <p className="mb-2 text-red-800">🚨 Admin Emergency Override</p>
+          <button
+            onClick={triggerOverride}
+            className="bg-red-600 text-white px-4 py-2 rounded"
+          >
+            Trigger Emergency Protocol
+          </button>
+        </div>
+      )}
+
+      <h2 className="text-2xl font-semibold mt-6 mb-2">🔐 Core System Laws</h2>
+      <ul className="list-disc ml-6 space-y-2">
+        {laws.map((law: any, i) => (
+          <li key={i}>
+            <strong>{law.title}:</strong> {law.description}
+          </li>
+        ))}
+      </ul>
     </div>
-  )
+  );
 }
