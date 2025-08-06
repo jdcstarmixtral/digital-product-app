@@ -1,13 +1,11 @@
 import fs from 'fs';
 import path from 'path';
+import { MixtralProduct } from '@/types';
 
-export async function writeMixtralProduct(slug: string, product: any): Promise<void> {
-  const outputPath = path.join(process.cwd(), 'data/products');
-  const outputFile = path.join(outputPath, `${slug}.json`);
+export async function writeMixtralProduct(slug: string, product: MixtralProduct): Promise<void> {
+  const productsDir = path.join(process.cwd(), 'data', 'mixtral');
+  const filePath = path.join(productsDir, \`\${slug}.json\`);
 
-  if (!fs.existsSync(outputPath)) {
-    fs.mkdirSync(outputPath, { recursive: true });
-  }
-
-  fs.writeFileSync(outputFile, JSON.stringify(product, null, 2));
+  await fs.promises.mkdir(productsDir, { recursive: true });
+  await fs.promises.writeFile(filePath, JSON.stringify(product, null, 2), 'utf8');
 }
