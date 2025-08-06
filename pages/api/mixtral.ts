@@ -1,7 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import fs from 'fs';
 import path from 'path';
-import { writeMixtralProduct } from '@/utils/mixtralProductWriter';
+import { writeMixtralProduct } from '../../utils/mixtralProductWriter';
 
 const MIXTRAL_URL = 'https://openrouter.ai/api/v1/chat/completions';
 
