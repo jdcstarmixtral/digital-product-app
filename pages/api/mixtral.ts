@@ -23,14 +23,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       },
       {
         headers: {
-          'Authorization': \`Bearer \${process.env.OPENROUTER_API_KEY}\`,
+          Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
           'HTTP-Referer': process.env.OPENROUTER_HTTP_REFERER || 'https://digital-product.vercel.app',
           'X-Title': process.env.OPENROUTER_X_TITLE || 'JDC LAM',
         },
       }
     )
 
-    const reply = response.data.choices?.[0]?.message?.content || 'No reply from model'
+    const reply = response.data.choices?.[0]?.message?.content || '⚠️ No reply from model'
     res.status(200).json({ reply })
 
   } catch (err: any) {
