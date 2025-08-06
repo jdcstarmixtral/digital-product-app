@@ -42,7 +42,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const product = JSON.parse(content);
     const slug = product.slug || product.title.toLowerCase().replace(/\s+/g, '-');
 
-    await writeMixtralProduct(slug, product); // ✅ FIXED — two arguments passed
+    await writeMixtralProduct(slug, product); // ✅ CORRECT FIX: two arguments
 
     return res.status(200).json({ success: true, slug, product });
 
