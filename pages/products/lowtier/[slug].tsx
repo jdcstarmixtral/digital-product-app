@@ -1,46 +1,28 @@
-import { GetStaticPaths, GetStaticProps } from 'next';
 import { useRouter } from 'next/router';
+import React from 'react';
 
-export default function ProductPage({ content }) {
+interface ProductPageProps {
+  content: {
+    title: string;
+    description: string;
+    image: string;
+    price: number;
+    category?: string;
+    tier?: string;
+    timestamp?: string;
+  };
+}
+
+export default function ProductPage({ content }: ProductPageProps) {
   const router = useRouter();
   if (router.isFallback) return <div>Loading...</div>;
 
   return (
-    <div style={{ padding: 20 }}>
-      <h1>{content?.title || 'No title'}</h1>
-      <p>{content?.description || 'No description found'}</p>
+    <div className="p-6 text-white">
+      <h1 className="text-3xl font-bold mb-2">{content.title}</h1>
+      <img src={content.image} alt={content.title} className="w-full max-w-md mb-4 rounded" />
+      <p className="mb-2">{content.description}</p>
+      <p className="text-lg font-semibold">${content.price}</p>
     </div>
   );
 }
-
-export const getStaticPaths: GetStaticPaths = async () => {
-  return {
-    paths: [], // Let pages build dynamically
-    fallback: 'blocking', // Build on demand
-  };
-};
-
-export const getStaticProps: GetStaticProps = async ({ params }) => {
-  const slug = params?.slug as string;
-  const products = {
-    'quantum-sigil': {
-      title: 'Quantum Sigil',
-      description: 'Unlock your energy blueprint with this dynamic sigil.',
-    },
-    'neural-impact': {
-      title: 'Neural Impact',
-      description: 'Supercharge your subconscious wiring with frequency-based alignment.',
-    },
-  };
-
-  const content = products[slug] || null;
-
-  if (!content) {
-    return { notFound: true };
-  }
-
-  return {
-    props: { content },
-    revalidate: 60, // Optional: ISR support
-  };
-};
