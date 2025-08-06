@@ -42,7 +42,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const product = JSON.parse(content);
     const slug = product.slug || product.title.toLowerCase().replace(/\s+/g, '-');
 
-    writeMixtralProduct(slug, product);
+    await writeMixtralProduct(slug, product);
 
     return res.status(200).json({ success: true, slug, product });
 
