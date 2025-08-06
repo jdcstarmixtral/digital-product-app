@@ -19,7 +19,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       },
       {
         headers: {
-          'Authorization': \`Bearer \${process.env.OPENROUTER_API_KEY}\`,
+          Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
           'Content-Type': 'application/json',
           'HTTP-Referer': process.env.OPENROUTER_HTTP_REFERER || 'https://digital-product.vercel.app',
           'X-Title': process.env.OPENROUTER_X_TITLE || 'JDC LAM',
@@ -28,9 +28,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     );
 
     const reply = response.data.choices?.[0]?.message?.content || '⚠️ No response';
-    res.status(200).json({ reply });
-  } catch (error) {
-    console.error('Mixtral API error:', error);
-    res.status(500).json({ error: 'Error contacting Mixtral server' });
+    return res.status(200).json({ reply });
+  } catch (error: any) {
+    console.error('Mixtral API error:', error?.response?.data || error.message);
+    return res.status(500).json({ error: 'Error contacting Mixtral server' });
   }
 }
