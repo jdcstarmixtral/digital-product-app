@@ -1,75 +1,62 @@
-import { useState } from "react";
-import axios from "axios";
-
-interface Message {
-  role: "user" | "assistant";
-  content: string;
-}
+import { useState } from 'react';
+import axios from 'axios';
 
 export default function ChatPage() {
-  const [input, setInput] = useState("");
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState([{ role: 'system', content: 'You are a helpful assistant.' }]);
+  const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const sendMessage = async () => {
     if (!input.trim()) return;
 
-    const userMessage: Message = { role: "user", content: input };
-    const updatedMessages = [...messages, userMessage];
-    setMessages(updatedMessages);
-    setInput("");
+    const newMessages = [...messages, { role: 'user', content: input }];
+    setMessages(newMessages);
+    setInput('');
     setLoading(true);
 
     try {
-      const res = await axios.post("/api/mixtral", {
-        messages: updatedMessages,
+      const response = await axios.post('/api/mixtral', {
+        messages: newMessages,
       });
 
-      const assistantReply = res.data.reply || res.data.response || "⚠️ No response";
-      setMessages([...updatedMessages, { role: "assistant", content: assistantReply }]);
+      const reply = response.data.reply || '⚠️ No reply';
+      setMessages([...newMessages, { role: 'assistant', content: reply }]);
     } catch (err) {
-      console.error(err);
-      setMessages([
-        ...updatedMessages,
-        { role: "assistant", content: "⚠️ Error contacting Mixtral server." },
-      ]);
+      setMessages([...newMessages, { role: 'assistant', content: '⚠️ Error contacting AI.' }]);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-black text-white p-6">
-      <h1 className="text-2xl font-bold mb-4">🧠 Mixtral Chat</h1>
-      <div className="space-y-4 mb-6">
-        {messages.map((msg, idx) => (
-          <div
-            key={idx}
-            className={`p-3 rounded-lg ${
-              msg.role === "user" ? "bg-gray-800 text-right" : "bg-gray-700 text-left"
-            }`}
-          >
-            <span className="block whitespace-pre-wrap">{msg.content}</span>
+    <div className="p-6 max-w-3xl mx-auto">
+      <h1 className="text-2xl font-bold mb-4">💬 JDC Mixtral Chat</h1>
+      <div className="space-y-4 mb-4">
+        {messages.map((msg, i) => (
+          <div key={i} className={msg.role === 'user' ? 'text-right' : 'text-left'}>
+            <div className={`inline-block px-4 py-2 rounded-lg ${msg.role === 'user' ? 'bg-blue-200' : 'bg-gray-200'}`}>
+              {msg.content}
+            </div>
           </div>
         ))}
       </div>
-      <form onSubmit={handleSubmit} className="flex gap-2">
+      <div className="flex gap-2">
         <input
+          className="flex-1 border border-gray-300 rounded px-4 py-2"
           type="text"
-          className="flex-1 px-4 py-2 rounded bg-gray-900 text-white border border-gray-600"
-          placeholder="Type your message..."
+          placeholder="Ask something..."
           value={input}
           onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
         />
         <button
-          type="submit"
-          className="px-4 py-2 bg-green-600 rounded hover:bg-green-700 disabled:opacity-50"
+          className="bg-black text-white px-4 py-2 rounded"
+          onClick={sendMessage}
           disabled={loading}
         >
-          {loading ? "..." : "Send"}
+          {loading ? '⏳' : 'Send'}
         </button>
-      </form>
+      </div>
     </div>
   );
 }
