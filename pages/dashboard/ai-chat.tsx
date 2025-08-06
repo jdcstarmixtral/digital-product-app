@@ -1,74 +1,53 @@
-import { useState } from "react";
-import Head from "next/head";
+import { useState } from "react"
+import Head from "next/head"
 
-export default function MixtralAIChat() {
-  const [messages, setMessages] = useState([
-    { role: "system", content: "You're now chatting with J-Star Mixtral AI. Ask me anything." }
-  ]);
-  const [input, setInput] = useState("");
-  const [loading, setLoading] = useState(false);
+export default function AiChat() {
+  const [input, setInput] = useState("")
+  const [output, setOutput] = useState("")
+  const [loading, setLoading] = useState(false)
 
-  async function sendMessage() {
-    if (!input.trim()) return;
-    const userMessage = { role: "user", content: input };
-    const updatedMessages = [...messages, userMessage];
-    setMessages(updatedMessages);
-    setInput("");
-    setLoading(true);
-
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading(true)
     try {
       const res = await fetch("/api/mixtral", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: updatedMessages }),
-      });
-      const data = await res.json();
-      if (data?.reply) {
-        setMessages([...updatedMessages, { role: "assistant", content: data.reply }]);
-      } else {
-        throw new Error("No reply from Mixtral");
-      }
-    } catch {
-      setMessages([...updatedMessages, {
-        role: "assistant",
-        content: "⚠️ Mixtral didn’t respond with content. Try again or check system load."
-      }]);
-    } finally {
-      setLoading(false);
+        body: JSON.stringify({
+          input,
+          memoryId: "jdc-core-memory"
+        })
+      })
+      const data = await res.json()
+      setOutput(data.output)
+    } catch (err) {
+      setOutput("⚠️ Mixtral backend error.")
     }
+    setLoading(false)
   }
 
   return (
-    <>
-      <Head><title>Mixtral AI Chat</title></Head>
-      <main className="p-6 max-w-3xl mx-auto min-h-screen bg-white">
-        <h1 className="text-3xl font-bold mb-6">🤖 Chat with J-Star Mixtral AI</h1>
-        <div className="space-y-4 mb-6">
-          {messages.map((msg, i) => (
-            <div key={i} className={msg.role === "user" ? "text-right" : "text-left"}>
-              <div className={`inline-block px-4 py-2 rounded-xl ${msg.role === "user" ? "bg-blue-100" : "bg-gray-200"}`}>
-                <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-        <div className="flex gap-2">
-          <input
-            className="flex-1 p-2 border rounded-lg"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && sendMessage()}
-            placeholder="Ask anything..."
-          />
-          <button
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg"
-            onClick={sendMessage}
-            disabled={loading}
-          >
-            {loading ? "..." : "Send"}
-          </button>
-        </div>
-      </main>
-    </>
-  );
+    <div className="p-6 max-w-3xl mx-auto">
+      <Head>
+        <title>JDC AI Chat</title>
+      </Head>
+      <h1 className="text-3xl font-bold mb-4">Mixtral Intelligence Dashboard</h1>
+      <form onSubmit={handleSubmit} className="mb-4">
+        <textarea
+          className="w-full p-3 border rounded"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          placeholder="Ask the JDC AI anything..."
+        />
+        <button
+          type="submit"
+          className="mt-2 px-4 py-2 bg-black text-white rounded"
+          disabled={loading}
+        >
+          {loading ? "Thinking..." : "Send"}
+        </button>
+      </form>
+      <div className="p-4 border bg-gray-100 rounded whitespace-pre-wrap">{output}</div>
+    </div>
+  )
 }
