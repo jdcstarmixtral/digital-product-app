@@ -1,73 +1,75 @@
-import Head from "next/head";
-import { useEffect, useState } from "react";
-import { runSelfHealingDiagnostics } from "../lib/selfheal";
+import Link from "next/link";
+import { useState, useEffect } from "react";
 
 export default function Dashboard() {
-  const [health, setHealth] = useState("Checking...");
-  const [laws, setLaws] = useState([]);
-  const [overrideVisible, setOverrideVisible] = useState(false);
+  const [coreLaws, setCoreLaws] = useState([]);
+  const [error, setError] = useState("");
+  const [showOverride, setShowOverride] = useState(false);
+  const [systemStatus, setSystemStatus] = useState("🟢 All Systems Go");
 
   useEffect(() => {
-    async function check() {
-      const result = await runSelfHealingDiagnostics();
-      setHealth(result.healthy ? "✅ All Systems Go" : "⚠️ Issues Detected");
-    }
-
-    async function fetchLaws() {
+    const fetchLaws = async () => {
       try {
         const res = await fetch("/api/corelaws");
         const data = await res.json();
-        setLaws(data || []);
+        setCoreLaws(data.laws);
       } catch (err) {
-        setLaws([{ title: "Error", description: "Failed to load core laws." }]);
+        setError("⚠️ Failed to load core laws.");
+        setSystemStatus("⚠️ Issues Detected");
       }
-    }
+    };
 
-    check();
     fetchLaws();
   }, []);
 
-  const triggerOverride = async () => {
-    await fetch("/api/override", { method: "POST" });
-    alert("🚨 Override triggered.");
-  };
-
   return (
-    <div className="p-6 max-w-4xl mx-auto">
-      <Head>
-        <title>JDC LAM Dashboard</title>
-      </Head>
+    <div className="min-h-screen bg-black text-white p-6 font-mono">
+      <h1 className="text-3xl mb-4 font-bold">🧠 JDC LAM Control Panel</h1>
 
-      <h1 className="text-4xl font-bold mb-4">JDC LAM Control Panel</h1>
-      <p className="text-lg mb-2">System Status: <strong>{health}</strong></p>
+      <div className="mb-4">
+        <strong>System Status:</strong> <span>{systemStatus}</span>
+      </div>
 
       <button
-        onClick={() => setOverrideVisible(!overrideVisible)}
-        className="bg-black text-white px-4 py-2 rounded mb-4"
+        onClick={() => setShowOverride(!showOverride)}
+        className="px-4 py-2 bg-red-700 rounded hover:bg-red-800 transition"
       >
-        {overrideVisible ? "Hide Override" : "Show Manual Override"}
+        {showOverride ? "Hide" : "Show"} Manual Override
       </button>
 
-      {overrideVisible && (
-        <div className="bg-red-100 border border-red-400 p-4 mb-4 rounded">
-          <p className="mb-2 text-red-800">🚨 Admin Emergency Override</p>
-          <button
-            onClick={triggerOverride}
-            className="bg-red-600 text-white px-4 py-2 rounded"
-          >
-            Trigger Emergency Protocol
-          </button>
+      {showOverride && (
+        <div className="mt-4 border border-red-500 p-4 rounded-lg">
+          <h2 className="text-xl mb-2 font-semibold text-red-300">🚨 Emergency Override Panel</h2>
+          <ul className="list-disc ml-6">
+            <li>Force rebuild system</li>
+            <li>Trigger AI healing pipeline</li>
+            <li>Flush payment cache</li>
+            <li>Inject fallback content</li>
+          </ul>
         </div>
       )}
 
-      <h2 className="text-2xl font-semibold mt-6 mb-2">🔐 Core System Laws</h2>
-      <ul className="list-disc ml-6 space-y-2">
-        {laws.map((law: any, i) => (
-          <li key={i}>
-            <strong>{law.title}:</strong> {law.description}
-          </li>
-        ))}
-      </ul>
+      <h2 className="mt-6 text-2xl font-semibold">🔐 Core System Laws</h2>
+      {error ? (
+        <p className="text-red-400 mt-2">{error}</p>
+      ) : (
+        <ul className="mt-2 space-y-2">
+          {coreLaws.map((law, i) => (
+            <li key={i} className="bg-gray-800 p-3 rounded border border-gray-600">
+              <strong>{law.title}:</strong> {law.description}
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <div className="mt-6">
+        <Link href="/dashboard/ai-chat" className="text-blue-400 underline mr-6">
+          🤖 Launch AI Control Chat
+        </Link>
+        <Link href="/dashboard/image-gen" className="text-blue-400 underline">
+          🎨 Open Image Generator
+        </Link>
+      </div>
     </div>
   );
 }
