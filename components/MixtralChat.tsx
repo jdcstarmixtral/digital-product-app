@@ -1,46 +1,56 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 export default function MixtralChat() {
-  const [messages, setMessages] = useState<{ role: string; content: string }[]>([]);
+  const [messages, setMessages] = useState([{ role: 'system', content: 'You are JDC Super AI powered by Mixtral. Respond intelligently.' }]);
   const [input, setInput] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const handleSend = async () => {
+  const sendMessage = async () => {
     if (!input.trim()) return;
 
     const newMessages = [...messages, { role: 'user', content: input }];
     setMessages(newMessages);
     setInput('');
-    setIsLoading(true);
+    setLoading(true);
 
-    const res = await fetch('/api/superai', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ messages: newMessages }),
-    });
+    try {
+      const res = await fetch('/api/mixtral', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: newMessages }),
+      });
 
-    const data = await res.json();
-    setMessages([...newMessages, { role: 'assistant', content: data.result }]);
-    setIsLoading(false);
+      const data = await res.json();
+      if (data.reply) {
+        setMessages([...newMessages, data.reply]);
+      } else {
+        setMessages([...newMessages, { role: 'assistant', content: '⚠️ No reply received.' }]);
+      }
+    } catch (err) {
+      console.error('Chat error:', err);
+      setMessages([...newMessages, { role: 'assistant', content: '❌ Error contacting Mixtral API.' }]);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div style={{ padding: 20 }}>
-      <div style={{ marginBottom: 10 }}>
-        {messages.map((msg, idx) => (
-          <div key={idx}>
+      <div style={{ maxHeight: 300, overflowY: 'auto', marginBottom: 10 }}>
+        {messages.map((msg, i) => (
+          <div key={i} style={{ margin: '6px 0' }}>
             <strong>{msg.role}:</strong> {msg.content}
           </div>
         ))}
       </div>
-      <textarea
+      <input
         value={input}
-        onChange={(e) => setInput(e.target.value)}
-        rows={3}
-        style={{ width: '100%' }}
+        onChange={e => setInput(e.target.value)}
+        placeholder="Type your message..."
+        style={{ padding: 8, width: '70%' }}
       />
-      <button onClick={handleSend} disabled={isLoading}>
-        {isLoading ? 'Thinking...' : 'Send'}
+      <button onClick={sendMessage} disabled={loading} style={{ padding: 8, marginLeft: 10 }}>
+        {loading ? 'Sending...' : 'Send'}
       </button>
     </div>
   );
