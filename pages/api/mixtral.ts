@@ -1,36 +1,75 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import axios from 'axios';
+import fs from 'fs';
+import path from 'path';
+import { writeMixtralProduct } from '@/utils/mixtralProductWriter';
 
-const MIXTRAL_API_URL = 'https://openrouter.ai/api/v1/chat/completions';
+const MIXTRAL_URL = 'https://openrouter.ai/api/v1/chat/completions';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
+    return res.status(405).json({ error: 'Only POST allowed' });
+  }
+
+  const userPrompt = req.body?.prompt;
+  if (!userPrompt) {
+    return res.status(400).json({ error: 'Missing prompt' });
   }
 
   try {
-    const { messages } = req.body;
-
-    const response = await axios.post(
-      MIXTRAL_API_URL,
+    const messages = [
       {
-        model: 'mistralai/mixtral-8x7b-instruct',
-        messages: messages,
+        role: 'system',
+        content:
+          'You are Mixtral, an elite product generator AI. Your job is to create viral digital product ideas with a title, description, and image suggestion.',
       },
       {
-        headers: {
-          Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
-          'Content-Type': 'application/json',
-          'HTTP-Referer': process.env.OPENROUTER_HTTP_REFERER || 'https://digital-product.vercel.app',
-          'X-Title': process.env.OPENROUTER_X_TITLE || 'JDC LAM',
-        },
-      }
-    );
+        role: 'user',
+        content: userPrompt,
+      },
+    ];
 
-    const reply = response.data.choices?.[0]?.message?.content || '⚠️ No response';
-    return res.status(200).json({ reply });
+    const response = await fetch(MIXTRAL_URL, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
+        'HTTP-Referer': process.env.OPENROUTER_HTTP_REFERER || 'https://digital-product.vercel.app',
+        'X-Title': process.env.OPENROUTER_X_TITLE || 'JDC LAM',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'mistral/mixtral-8x7b',
+        messages,
+      }),
+    });
+
+    const data = await response.json();
+    const aiText = data?.choices?.[0]?.message?.content;
+
+    if (!aiText) {
+      throw new Error('No content from Mixtral');
+    }
+
+    // Basic parsing logic from AI response
+    const match = aiText.match(/Title:\s*(.+)\n+Description:\s*(.+)\n+Image:\s*(.+)/i);
+    if (!match) {
+      return res.status(500).json({ error: 'Failed to parse Mixtral response', raw: aiText });
+    }
+
+    const [_, title, description, image] = match;
+
+    // Write product file
+    const product = {
+      title: title.trim(),
+      description: description.trim(),
+      image: image.trim(),
+    };
+
+    const slug = await writeMixtralProduct(product);
+
+    return res.status(200).json({ success: true, slug, product });
+
   } catch (error: any) {
-    console.error('Mixtral API error:', error?.response?.data || error.message);
-    return res.status(500).json({ error: 'Error contacting Mixtral server' });
+    console.error('[MIXTRAL API ERROR]', error);
+    return res.status(500).json({ error: error.message || 'Internal Server Error' });
   }
 }
