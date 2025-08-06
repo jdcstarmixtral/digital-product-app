@@ -1,75 +1,53 @@
-import type { NextApiRequest, NextApiResponse } from 'next';
 import fs from 'fs';
 import path from 'path';
-import { writeMixtralProduct } from '../../utils/mixtralProductWriter';
+import { writeMixtralProduct } from '@/utils/mixtralProductWriter';
+import type { NextApiRequest, NextApiResponse } from 'next';
 
 const MIXTRAL_URL = 'https://openrouter.ai/api/v1/chat/completions';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Only POST allowed' });
+    return res.status(405).json({ message: 'Method not allowed' });
   }
 
-  const userPrompt = req.body?.prompt;
-  if (!userPrompt) {
-    return res.status(400).json({ error: 'Missing prompt' });
-  }
+  const prompt = req.body.prompt;
 
   try {
-    const messages = [
-      {
-        role: 'system',
-        content:
-          'You are Mixtral, an elite product generator AI. Your job is to create viral digital product ideas with a title, description, and image suggestion.',
-      },
-      {
-        role: 'user',
-        content: userPrompt,
-      },
-    ];
-
     const response = await fetch(MIXTRAL_URL, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
-        'HTTP-Referer': process.env.OPENROUTER_HTTP_REFERER || 'https://digital-product.vercel.app',
-        'X-Title': process.env.OPENROUTER_X_TITLE || 'JDC LAM',
+        'Authorization': \`Bearer \${process.env.OPENROUTER_API_KEY}\`,
         'Content-Type': 'application/json',
+        'HTTP-Referer': process.env.OPENROUTER_HTTP_REFERER || '',
+        'X-Title': process.env.OPENROUTER_X_TITLE || 'JDC-AI'
       },
       body: JSON.stringify({
-        model: 'mistral/mixtral-8x7b',
-        messages,
-      }),
+        model: "mistral/mixtral-8x7b",
+        messages: [
+          {
+            role: "system",
+            content: "You are a product generator. Based on a user's request, generate a small digital product idea including slug, title, description, price, and image."
+          },
+          {
+            role: "user",
+            content: prompt
+          }
+        ]
+      })
     });
 
     const data = await response.json();
-    const aiText = data?.choices?.[0]?.message?.content;
+    const content = data.choices?.[0]?.message?.content;
 
-    if (!aiText) {
-      throw new Error('No content from Mixtral');
-    }
+    const product = JSON.parse(content);
+    const slug = product.slug || product.title.toLowerCase().replace(/\s+/g, '-');
 
-    // Basic parsing logic from AI response
-    const match = aiText.match(/Title:\s*(.+)\n+Description:\s*(.+)\n+Image:\s*(.+)/i);
-    if (!match) {
-      return res.status(500).json({ error: 'Failed to parse Mixtral response', raw: aiText });
-    }
-
-    const [_, title, description, image] = match;
-
-    // Write product file
-    const product = {
-      title: title.trim(),
-      description: description.trim(),
-      image: image.trim(),
-    };
-
-    const slug = await writeMixtralProduct(product);
+    writeMixtralProduct(slug, product);
 
     return res.status(200).json({ success: true, slug, product });
 
   } catch (error: any) {
-    console.error('[MIXTRAL API ERROR]', error);
-    return res.status(500).json({ error: error.message || 'Internal Server Error' });
+    console.error('Error contacting Mixtral server:', error);
+    return res.status(500).json({ success: false, error: error.message });
   }
 }
