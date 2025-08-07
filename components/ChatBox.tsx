@@ -1,67 +1,97 @@
-import { useState } from 'react';
+import React, { useState } from "react";
 
-export default function ChatBox() {
-  const [input, setInput] = useState('');
-  const [messages, setMessages] = useState<any[]>([]);
+const ChatBox = () => {
+  const [input, setInput] = useState("");
+  const [messages, setMessages] = useState<{ role: string; content: string }[]>([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
+  const [healingLog, setHealingLog] = useState<string[]>([]);
 
-  const handleSend = async () => {
+  const sendMessage = async () => {
     if (!input.trim()) return;
 
-    const newMessages = [...messages, { role: 'user', content: input }];
-    setMessages(newMessages);
-    setInput('');
+    const userMsg = { role: "user", content: input };
+    setMessages((prev) => [...prev, userMsg]);
+    setInput("");
     setLoading(true);
-    setError('');
+    setError("");
 
     try {
-      const res = await fetch('/api/superai', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: newMessages }),
+      const res = await fetch("/api/mixtral", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages: [...messages, userMsg] }),
       });
 
       const data = await res.json();
+      if (!res.ok || !data.result) throw new Error(data.error || "No response");
 
-      if (!res.ok) throw new Error(data.error || 'Unknown error');
-
-      setMessages([...newMessages, data.message]);
+      setMessages((prev) => [...prev, { role: "assistant", content: data.result }]);
     } catch (err: any) {
-      setError(err.message || 'Failed to get response');
+      setError("Error: " + (err.message || "Unknown"));
+    } finally {
+      setLoading(false);
     }
+  };
 
-    setLoading(false);
+  const triggerHealing = async () => {
+    setHealingLog(["🛠 Healing process initiated..."]);
+    try {
+      const res = await fetch("/api/heal", { method: "POST" });
+      const data = await res.json();
+
+      if (data.success && Array.isArray(data.log)) {
+        setHealingLog((prev) => [...prev, ...data.log]);
+      } else {
+        setHealingLog((prev) => [...prev, "⚠️ Healing completed with no log output"]);
+      }
+    } catch (err: any) {
+      setHealingLog((prev) => [...prev, "❌ Healing error: " + err.message]);
+    }
   };
 
   return (
-    <div className="w-full max-w-xl mx-auto p-4">
+    <div className="p-4 bg-gray-100 rounded shadow max-w-2xl mx-auto">
+      <h2 className="text-2xl font-bold mb-4">🧠 Mixtral Chat</h2>
+
       <div className="border rounded p-3 h-96 overflow-y-auto mb-2 bg-white shadow">
         {messages.map((msg, idx) => (
-          <div key={idx} className={}>
+          <div key={idx} className={msg.role === "user" ? "text-right" : "text-left"}>
             <strong>{msg.role}:</strong> {msg.content}
           </div>
         ))}
-        {loading && <div className="text-green-600">Thinking...</div>}
+        {loading && <div className="text-gray-400">⏳ Waiting for response...</div>}
+        {error && <div className="text-red-500 mt-2">{error}</div>}
       </div>
-
-      {error && <div className="text-red-500 mb-2">{error}</div>}
 
       <div className="flex space-x-2">
         <input
+          className="flex-1 border px-3 py-2 rounded"
+          type="text"
+          placeholder="Type your message..."
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          className="flex-1 border p-2 rounded"
-          placeholder="Type your message..."
+          onKeyDown={(e) => e.key === "Enter" && sendMessage()}
         />
-        <button
-          onClick={handleSend}
-          className="bg-blue-600 text-white px-4 py-2 rounded"
-          disabled={loading}
-        >
+        <button onClick={sendMessage} className="bg-blue-600 text-white px-4 py-2 rounded shadow">
           Send
         </button>
       </div>
+
+      <div className="mt-4">
+        <button onClick={triggerHealing} className="bg-green-600 text-white px-4 py-2 rounded shadow">
+          🛠 Heal System
+        </button>
+        {healingLog.length > 0 && (
+          <div className="mt-3 bg-black text-green-300 p-3 rounded max-h-64 overflow-y-auto font-mono text-sm">
+            {healingLog.map((line, i) => (
+              <div key={i}>{line}</div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
-}
+};
+
+export default ChatBox;
