@@ -1,39 +1,40 @@
-import type { NextApiRequest, NextApiResponse } from 'next';
+import type { NextApiRequest, NextApiResponse } from 'next'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { prompt } = req.body;
+  const { messages } = req.body;
 
-  if (!prompt) {
-    return res.status(400).json({ error: 'Missing prompt' });
+  if (!messages || !Array.isArray(messages)) {
+    return res.status(400).json({ error: 'Missing or invalid messages array.' });
   }
 
-  const apiKey = process.env.HUGGINGFACE_API_KEY;
-  const model = 'mistralai/Mixtral-8x7B-Instruct-v0.1'; // <- Change if using a different one
-
   try {
-    const response = await fetch(`https://api-inference.huggingface.co/models/${model}`, {
+    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${apiKey}`,
+        'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
         'Content-Type': 'application/json',
+        'HTTP-Referer': process.env.OPENROUTER_HTTP_REFERER || '',
+        'X-Title': process.env.OPENROUTER_X_TITLE || ''
       },
-      body: JSON.stringify({ inputs: prompt }),
+      body: JSON.stringify({
+        model: 'mistralai/mixtral-8x7b-instruct',
+        messages,
+      }),
     });
 
-    if (!response.ok) {
-      const error = await response.json();
-      return res.status(response.status).json({ error: error.error || 'AI response error' });
+    const data = await response.json();
+
+    if (!data.choices || !data.choices[0]?.message) {
+      return res.status(500).json({ error: 'Invalid AI response' });
     }
 
-    const data = await response.json();
-    const result = Array.isArray(data) ? data[0]?.generated_text : data?.generated_text;
-
-    return res.status(200).json({ result: result || 'No response generated.' });
-  } catch (err: any) {
-    return res.status(500).json({ error: err.message || 'Server error' });
+    return res.status(200).json({ message: data.choices[0].message });
+  } catch (err) {
+    console.error('[SuperAI Error]', err);
+    return res.status(500).json({ error: 'Internal server error' });
   }
 }
