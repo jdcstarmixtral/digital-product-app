@@ -1,48 +1,49 @@
-import React, { useState } from "react";
+"use client";
+import { useState } from "react";
 
-const HealSystem = () => {
-  const [log, setLog] = useState<string[]>([]);
+export default function HealSystem() {
   const [healing, setHealing] = useState(false);
+  const [logs, setLogs] = useState<string[]>([]);
 
-  const startHealing = async () => {
+  const handleHeal = async () => {
     setHealing(true);
+    setLogs(["⛑ Healing Activated..."]);
+
     const steps = [
-      "🧠 CLAWS AI engaged...",
-      "🔍 Scanning for system issues...",
-      "⚙️ Rebuilding routes...",
-      "📦 Validating components...",
-      "🚨 Fixing 404 fallback routes...",
-      "📁 Ensuring all files are accessible...",
-      "✅ All core logic healed successfully.",
+      "🔍 Scanning for broken routes...",
+      "🧠 CLAWS AI running diagnostics...",
+      "🛠 Rebuilding dynamic routes...",
+      "🔁 Revalidating deployment...",
+      "✅ Final system check...",
+      "🚀 System healed successfully."
     ];
 
-    for (let i = 0; i < steps.length; i++) {
-      await new Promise((r) => setTimeout(r, 1000)); // Simulate delay
-      setLog((prev) => [...prev, steps[i]]);
+    for (const step of steps) {
+      await new Promise((r) => setTimeout(r, 1000));
+      setLogs((prev) => [...prev, step]);
     }
 
     setHealing(false);
   };
 
   return (
-    <div className="bg-white p-4 rounded shadow mb-4">
-      <h3 className="text-lg font-semibold mb-2">🛠️ System Healing</h3>
+    <div className="bg-white p-4 rounded shadow mt-4">
+      <h3 className="text-lg font-semibold mb-2">System Healer</h3>
       <button
-        onClick={startHealing}
+        onClick={handleHeal}
         disabled={healing}
-        className="bg-green-600 text-white px-4 py-2 rounded"
+        className="bg-red-600 text-white px-4 py-2 rounded disabled:opacity-50"
       >
         {healing ? "Healing..." : "Heal System"}
       </button>
-      <div className="mt-4 max-h-48 overflow-y-auto border rounded p-2 bg-gray-50 text-sm">
-        {log.length === 0 ? (
-          <p className="text-gray-400">No healing logs yet.</p>
-        ) : (
-          log.map((line, idx) => <p key={idx}>• {line}</p>)
-        )}
-      </div>
+
+      {logs.length > 0 && (
+        <div className="mt-4 text-sm bg-gray-100 p-3 rounded font-mono space-y-1 max-h-64 overflow-y-auto">
+          {logs.map((log, i) => (
+            <div key={i}>{log}</div>
+          ))}
+        </div>
+      )}
     </div>
   );
-};
-
-export default HealSystem;
+}
