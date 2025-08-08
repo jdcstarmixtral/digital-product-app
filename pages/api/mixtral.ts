@@ -1,5 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 
+export const dynamic = 'force-dynamic'
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method Not Allowed' })
@@ -7,8 +9,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   const { messages } = req.body
 
-  if (!messages || !Array.isArray(messages)) {
-    return res.status(400).json({ error: 'Missing or invalid messages' })
+  if (!Array.isArray(messages)) {
+    return res.status(400).json({ error: 'Invalid messages format' })
   }
 
   try {
@@ -17,7 +19,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       headers: {
         'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
         'Content-Type': 'application/json',
-        'HTTP-Referer': process.env.OPENROUTER_HTTP_REFERER || 'https://jdc-lam-final.vercel.app',
+        'HTTP-Referer': process.env.OPENROUTER_HTTP_REFERER || '',
         'X-Title': process.env.OPENROUTER_X_TITLE || 'Mixtral Chat'
       },
       body: JSON.stringify({
@@ -28,14 +30,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const data = await response.json()
 
-    if (!response.ok) {
-      console.error('[Mixtral API ERROR]', data)
-      return res.status(500).json({ error: 'Mixtral API Error', details: data })
+    if (!response.ok || !data?.choices?.[0]) {
+      console.error('Mixtral API response issue:', data)
+      return res.status(500).json({ error: 'No valid response from Mixtral', details: data })
     }
 
-    return res.status(200).json({ reply: data.choices?.[0]?.message?.content || '' })
+    const replyContent =
+      data.choices[0].message?.content ||
+      data.choices[0].text ||
+      'Mixtral replied, but no readable content found.'
+
+    return res.status(200).json({ reply: replyContent })
   } catch (err) {
-    console.error('[Mixtral FETCH FAIL]', err)
-    return res.status(500).json({ error: 'Fetch failure', details: err.message })
+    console.error('Mixtral fetch error:', err)
+    return res.status(500).json({ error: 'Fetch failed', details: err })
   }
 }
