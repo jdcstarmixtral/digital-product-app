@@ -1,8 +1,9 @@
-import type { NextApiRequest, NextApiResponse } from 'next';
-import axios from 'axios';
+import type { NextApiRequest, NextApiResponse } from 'next'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
 
   const { messages } = req.body;
 
@@ -11,20 +12,29 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const response = await axios.post('https://openrouter.ai/api/v1/chat/completions', {
-      model: 'mistralai/mixtral-8x7b',
-      messages,
-    }, {
+    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
       headers: {
         'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
         'Content-Type': 'application/json',
-        'HTTP-Referer': process.env.OPENROUTER_HTTP_REFERER || 'https://yourdomain.com',
-        'X-Title': process.env.OPENROUTER_X_TITLE || 'jdc-mixtral'
-      }
+        'HTTP-Referer': process.env.OPENROUTER_HTTP_REFERER || '',
+        'X-Title': process.env.OPENROUTER_X_TITLE || ''
+      },
+      body: JSON.stringify({
+        model: "mistralai/mixtral-8x7b",
+        messages,
+        temperature: 0.7,
+      }),
     });
 
-    res.status(200).json(response.data);
-  } catch (err: any) {
-    res.status(500).json({ error: 'API call failed', details: err?.response?.data || err.message });
+    const data = await response.json();
+
+    if (data.error) {
+      return res.status(500).json({ error: data.error.message || 'OpenRouter error' });
+    }
+
+    res.status(200).json({ result: data.choices?.[0]?.message?.content || 'No response.' });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to contact Mixtral.' });
   }
 }
