@@ -1,1 +1,0 @@
-self.__REACT_LOADABLE_MANIFEST='{"dashboard/index.tsx -> @/components/MixtralChat":{"id":6456,"files":["static/chunks/456.e52d03965bd8af2a.js"]}}';
