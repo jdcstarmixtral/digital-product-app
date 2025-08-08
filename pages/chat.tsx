@@ -1,10 +1,10 @@
-import { useState } from 'react';
-import axios from 'axios';
+import React, { useState } from 'react';
 
 export default function ChatPage() {
-  const [messages, setMessages] = useState([{ role: 'system', content: 'You are a helpful assistant.' }]);
+  const [messages, setMessages] = useState([{ role: 'system', content: 'You are Mixtral, a helpful assistant.' }]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const sendMessage = async () => {
     if (!input.trim()) return;
@@ -13,50 +13,54 @@ export default function ChatPage() {
     setMessages(newMessages);
     setInput('');
     setLoading(true);
+    setError('');
 
     try {
-      const response = await axios.post('/api/mixtral', {
-        messages: newMessages,
+      const res = await fetch('/api/mixtral', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: newMessages })
       });
 
-      const reply = response.data.reply || '⚠️ No reply';
-      setMessages([...newMessages, { role: 'assistant', content: reply }]);
+      const data = await res.json();
+
+      if (!res.ok || !data.reply) {
+        setError('❌ Mixtral returned no reply.');
+        setLoading(false);
+        return;
+      }
+
+      setMessages([...newMessages, { role: 'assistant', content: data.reply }]);
     } catch (err) {
-      setMessages([...newMessages, { role: 'assistant', content: '⚠️ Error contacting AI.' }]);
+      console.error('Fetch error:', err);
+      setError('❌ Failed to reach Mixtral.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="p-6 max-w-3xl mx-auto">
-      <h1 className="text-2xl font-bold mb-4">💬 JDC Mixtral Chat</h1>
-      <div className="space-y-4 mb-4">
+    <div style={{ padding: '1rem', fontFamily: 'sans-serif' }}>
+      <h1>🧠 Mixtral Chat</h1>
+      <div style={{ marginBottom: '1rem' }}>
         {messages.map((msg, i) => (
-          <div key={i} className={msg.role === 'user' ? 'text-right' : 'text-left'}>
-            <div className={`inline-block px-4 py-2 rounded-lg ${msg.role === 'user' ? 'bg-blue-200' : 'bg-gray-200'}`}>
-              {msg.content}
-            </div>
+          <div key={i} style={{ margin: '0.5rem 0' }}>
+            <b>{msg.role}:</b> {msg.content}
           </div>
         ))}
+        {loading && <p>⏳ Thinking...</p>}
+        {error && <p style={{ color: 'red' }}>{error}</p>}
       </div>
-      <div className="flex gap-2">
-        <input
-          className="flex-1 border border-gray-300 rounded px-4 py-2"
-          type="text"
-          placeholder="Ask something..."
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
-        />
-        <button
-          className="bg-black text-white px-4 py-2 rounded"
-          onClick={sendMessage}
-          disabled={loading}
-        >
-          {loading ? '⏳' : 'Send'}
-        </button>
-      </div>
+      <input
+        style={{ width: '80%', padding: '0.5rem' }}
+        value={input}
+        onChange={(e) => setInput(e.target.value)}
+        placeholder="Say something to Mixtral..."
+        onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
+      />
+      <button onClick={sendMessage} style={{ padding: '0.5rem', marginLeft: '0.5rem' }}>
+        Send
+      </button>
     </div>
   );
 }
