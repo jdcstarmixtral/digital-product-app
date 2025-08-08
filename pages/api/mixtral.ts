@@ -8,7 +8,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   const { messages } = req.body
-
   if (!Array.isArray(messages)) {
     return res.status(400).json({ error: 'Invalid messages format' })
   }
@@ -23,7 +22,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         'X-Title': process.env.OPENROUTER_X_TITLE || 'Mixtral Chat'
       },
       body: JSON.stringify({
-        model: 'mistralai/mixtral-8x7b',
+        model: 'mistralai/mixtral-8x7b-instruct',
         messages
       })
     })
@@ -31,7 +30,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const data = await response.json()
 
     if (!response.ok || !data?.choices?.[0]) {
-      console.error('Mixtral API response issue:', data)
+      console.error('Mixtral API error:', data)
       return res.status(500).json({ error: 'No valid response from Mixtral', details: data })
     }
 
