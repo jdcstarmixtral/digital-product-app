@@ -1,0 +1,22 @@
+{
+  "mode": "live",
+  "tiers": {
+    "low": 11,
+    "mid": 11,
+    "high": 11
+  },
+  "minDiversity": true,
+  "image": {
+    "strategy": "generate-or-curate",
+    "allowStock": false
+  },
+  "funnel": {
+    "upsell": true,
+    "downsell": true,
+    "guaranteeCopy": "30-day no-questions refund on digital access."
+  },
+  "replaceOnUnderperform": {
+    "ctrBelow": 0.6,
+    "crBelow": 1.0
+  }
+}
