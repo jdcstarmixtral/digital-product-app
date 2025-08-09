@@ -28,3 +28,5 @@
 **Flags**
 - `AUTO_PRODUCT_MODE=live` enables live generation instead of static fallbacks.
 - Safe fallback route shows static inventory only if generation errors.
+
+_Last reviewed: 2025-08-09 06:23 UTC_

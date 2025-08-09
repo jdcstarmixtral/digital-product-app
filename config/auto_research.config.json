@@ -17,6 +17,6 @@
   },
   "replaceOnUnderperform": {
     "ctrBelow": 0.6,
-    "crBelow": 1.0
+    "crBelow": 1
   }
 }
