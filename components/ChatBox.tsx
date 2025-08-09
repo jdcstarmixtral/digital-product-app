@@ -1,78 +1,113 @@
-import React, { useState } from 'react'
+import React, { useState } from 'react';
 
-type ChatMsg = { role: 'user' | 'assistant'; content: string }
+type ChatRole = 'user' | 'assistant';
+
+interface ChatMsg {
+  role: ChatRole;
+  content: string;
+}
 
 export default function ChatBox() {
-  const [messages, setMessages] = useState<ChatMsg[]>([])
-  const [input, setInput] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [input, setInput] = useState('');
+  const [messages, setMessages] = useState<ChatMsg[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
 
-  async function sendMessage() {
-    if (!input.trim()) return
-    setError(null)
+  async function sendMessage(e?: React.FormEvent) {
+    e?.preventDefault();
+    setErr(null);
+    const trimmed = input.trim();
+    if (!trimmed) return;
 
-    const now = [...messages, { role: 'user', content: input }]
-    setMessages(now)
-    setInput('')
-    setLoading(true)
+    // lock the literal type so TS doesn't widen to string
+    const userMsg: ChatMsg = { role: 'user', content: trimmed };
+    const nextMsgs: ChatMsg[] = [...messages, userMsg];
+    setMessages(nextMsgs);
+    setInput('');
+    setLoading(true);
 
     try {
-      const r = await fetch('/api/mixtral', {
+      const res = await fetch('/api/mixtral', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: now })
-      })
-      const data = await r.json()
-      if (!r.ok) {
-        setError(
-          (data?.error ? String(data.error) : 'Unknown error')
-          + (data?.details ? ` | details: ${JSON.stringify(data.details).slice(0, 400)}` : '')
-        )
-      } else {
-        setMessages([...now, { role: 'assistant', content: data.reply || '(empty reply)' }])
+        body: JSON.stringify({ messages: nextMsgs }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setErr(
+          data?.error
+            ? (typeof data.error === 'string'
+                ? data.error
+                : data.error.message || 'Mixtral API error')
+            : 'Mixtral failed'
+        );
+        // Show the raw details for debugging if present
+        if (data?.details) {
+          setMessages(m => [
+            ...m,
+            { role: 'assistant', content: `⚠️ ${JSON.stringify(data.details).slice(0, 1000)}` },
+          ]);
+        }
+        return;
       }
+
+      const reply: string =
+        data?.reply ??
+        data?.choices?.[0]?.message?.content ??
+        data?.choices?.[0]?.text ??
+        '';
+
+      setMessages(m => [...m, { role: 'assistant', content: reply || '(no content)' }]);
     } catch (e: any) {
-      setError(e?.message || 'Network error')
+      setErr(e?.message || 'Network/Fetch error');
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 
   return (
-    <div className="w-full max-w-3xl mx-auto border rounded-xl p-4 bg-white shadow">
-      <div className="h-80 overflow-y-auto space-y-2 mb-3">
-        {messages.map((m, i) => (
-          <div key={i} className={m.role === 'user' ? 'text-right' : 'text-left'}>
-            <div className={`inline-block px-3 py-2 rounded-lg ${m.role === 'user' ? 'bg-blue-100' : 'bg-gray-100'}`}>
-              <strong>{m.role}:</strong> {m.content}
-            </div>
+    <div className="w-full max-w-3xl mx-auto">
+      <div className="border rounded p-3 h-96 overflow-y-auto mb-3 bg-white shadow">
+        {messages.length === 0 && (
+          <div className="text-sm text-gray-500">Say hi to Mixtral to start…</div>
+        )}
+        {messages.map((msg, idx) => (
+          <div
+            key={idx}
+            className={
+              'mb-2 ' + (msg.role === 'user' ? 'text-gray-900' : 'text-blue-700')
+            }
+          >
+            <strong>{msg.role}:</strong> {msg.content}
           </div>
         ))}
+        {loading && <div className="text-xs text-gray-500">Mixtral is thinking…</div>}
+        {err && (
+          <div className="mt-2 text-xs text-red-600">
+            Error: {err}
+          </div>
+        )}
       </div>
 
-      {error && (
-        <div className="mb-3 text-sm text-red-700 bg-red-50 border border-red-200 rounded p-2">
-          <strong>API Error:</strong> {error}
-        </div>
-      )}
-
-      <div className="flex gap-2">
+      <form onSubmit={sendMessage} className="flex gap-2">
         <input
-          className="flex-1 border rounded px-3 py-2"
-          placeholder="Say something to Mixtral…"
+          className="flex-1 border rounded p-2"
+          placeholder="Type your message…"
           value={input}
           onChange={e => setInput(e.target.value)}
-          onKeyDown={e => e.key === 'Enter' ? sendMessage() : null}
+          disabled={loading}
         />
         <button
-          className="px-4 py-2 rounded bg-black text-white disabled:opacity-50"
+          type="submit"
           onClick={sendMessage}
           disabled={loading}
+          className="border rounded px-4 py-2"
         >
           {loading ? '…' : 'Send'}
         </button>
-      </div>
+      </form>
     </div>
-  )
+  );
 }
