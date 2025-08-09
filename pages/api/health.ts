@@ -1,35 +1,27 @@
-import type { NextApiRequest, NextApiResponse } from "next";
-import fs from "fs";
-import path from "path";
+import type { NextApiRequest, NextApiResponse } from 'next';
 
-type HealthReport = {
-  status: "OK" | "ISSUES_DETECTED";
-  report: {
-    chat: boolean;
-    corelaws: boolean;
-    dashboard: boolean;
-    fallbackRoutes: boolean;
-    paymentEngine: boolean;
-  };
-};
+export const dynamic = 'force-dynamic';
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse<HealthReport>) {
-  const checkPath = (filePath: string) => {
-    return fs.existsSync(path.join(process.cwd(), filePath));
-  };
+export default async function handler(_req: NextApiRequest, res: NextApiResponse) {
+  const engine = process.env.AI_ENGINE || 'unknown';
+  const model  = process.env.CHAT_MODEL || 'unknown';
 
-  const report = {
-    chat: checkPath("pages/chat.tsx"),
-    corelaws: checkPath("pages/api/corelaws.ts"),
-    dashboard: checkPath("pages/dashboard/index.tsx"),
-    fallbackRoutes: checkPath("pages/products/lowtier/[slug].tsx"),
-    paymentEngine: checkPath("pages/api/payment/square.ts"),
-  };
+  const report: any = { engine, model, chat: false };
+  try {
+    const r = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || ''}/api/mixtral`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      // simple ping prompt
+      body: JSON.stringify({ messages: [{ role: 'user', content: 'ping' }] }),
+    });
+    report.chat = r.ok;
+    if (!r.ok) {
+      try { report.chat_error = await r.json(); } catch { report.chat_error = await r.text(); }
+    }
+  } catch (e: any) {
+    report.chat_error = String(e?.message || e);
+  }
 
-  const healthy = Object.values(report).every(Boolean);
-
-  res.status(200).json({
-    status: healthy ? "OK" : "ISSUES_DETECTED",
-    report,
-  });
+  const status = report.chat ? 'OK' : 'ISSUES_DETECTED';
+  return res.status(200).json({ status, report });
 }
